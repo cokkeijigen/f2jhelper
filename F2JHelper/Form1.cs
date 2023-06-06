@@ -44,7 +44,6 @@ namespace F2JHelper
         {
             //AllocConsole();
             string[] conf = this.textBox1.Lines;
-            var logs = new List<string>();
             if (conf == null || conf.Length != 12)
             {
                 MessageBox.Show("参数信息错误或者为空！");
@@ -54,42 +53,33 @@ namespace F2JHelper
                 try
                 {
                     int conversion = Int16.Parse(conf[9].Trim());
-                    if (conversion != 1 && conversion != 2)
+                    string inputPath = conf[1].Trim();
+                    string inputEncode = conf[2].Trim();
+                    string outputPath = conf[5].Trim();
+                    string outputEncode = conf[6].Trim();
+                    Dictionary<char, char> maps = createMaps(conversion);
+                    System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                    Encoding I_encode = Encoding.GetEncoding(inputEncode);
+                    Encoding O_encode = Encoding.GetEncoding(outputEncode);
+                    this.textBox1.AppendText(Environment.NewLine);
+                    string fileName = "";
+                    foreach (string path in Directory.GetFiles(inputPath))
                     {
-                        MessageBox.Show("转换目标错误！");
-                    }
-                    else
-                    {
-
-                        string inputPath = conf[1].Trim();
-                        string inputEncode = conf[2].Trim();
-                        string outputPath = conf[5].Trim();
-                        string outputEncode = conf[6].Trim();
-                        Dictionary<char, char> maps = createMaps(conversion);
-                        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-                        Encoding I_encode = Encoding.GetEncoding(inputEncode);
-                        Encoding O_encode = Encoding.GetEncoding(outputEncode);
-                        string fileName = "";
-
-                        foreach (string path in Directory.GetFiles(inputPath))
+                        fileName = path.Substring(path.LastIndexOf("\\") + 1);
+                        try
                         {
-                            fileName = path.Substring(path.LastIndexOf("\\") + 1);
-                            try
+                            string fileData = File.ReadAllText(path, I_encode);
+                            foreach (KeyValuePair<char, char> pair in maps)
                             {
-                                string fileData = File.ReadAllText(path, I_encode);
-                                foreach (KeyValuePair<char, char> pair in maps)
-                                {
-                                    fileData = fileData.Replace(pair.Key, pair.Value);
-                                }
-                                if (!Directory.Exists(outputPath)) Directory.CreateDirectory(outputPath);
-                                File.WriteAllText(outputPath + "\\" + fileName, fileData, O_encode);
-                                logs.Add(fileName + ": done");
+                                fileData = fileData.Replace(pair.Key, pair.Value);
                             }
-                            catch (Exception ex)
-                            {
-                                logs.Add(fileName + ": " + ex.Message);
-                            }
-                            this.textBox1.Lines = logs.ToArray();
+                            if (!Directory.Exists(outputPath)) Directory.CreateDirectory(outputPath);
+                            File.WriteAllText(outputPath + "\\" + fileName, fileData, O_encode);
+                            this.textBox1.AppendText(Environment.NewLine + fileName + ": done");
+                        }
+                        catch (Exception ex)
+                        {
+                            this.textBox1.AppendText(Environment.NewLine + fileName + ": " + ex.Message);
                         }
                     }
                 }
@@ -97,7 +87,6 @@ namespace F2JHelper
                 {
                     MessageBox.Show(ex.Message);
                 }
-
             }
 
         }
